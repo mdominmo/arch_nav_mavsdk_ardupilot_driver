@@ -1,0 +1,4 @@
+connection_url: "tcp://127.0.0.1:14570"
+discover_timeout_s: 5.0
+default_speed_m_s: 5.0
+mission_upload_delay_ms: 1000
