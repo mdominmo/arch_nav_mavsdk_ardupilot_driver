@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(arch_nav_mavsdk VERSION 0.0.1 LANGUAGES CXX)
+project(arch_nav_mavsdk_ardupilot VERSION 0.0.1 LANGUAGES CXX)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)

@@ -77,7 +77,7 @@ CommandResponse MavsdkCommandDispatcher::execute_disarm() {
 CommandResponse MavsdkCommandDispatcher::execute_takeoff(
     double height, ReferenceFrame frame,
     std::function<void()> on_complete,
-    arch_nav::report::TakeoffDriverOperationData& driver_data) {
+    arch_nav::execution::TakeoffExecutionState& state) {
   if (frame != ReferenceFrame::LOCAL_NED) return CommandResponse::DENIED;
 
   stop();
@@ -153,14 +153,14 @@ CommandResponse MavsdkCommandDispatcher::execute_takeoff(
   }
   stop_requested_ = false;
 
-  monitor_thread_ = std::thread([this, &driver_data, height, pos] {
+  monitor_thread_ = std::thread([this, &state, height, pos] {
     constexpr double kTakeoffToleranceM = 0.15;
     const double target_rel_alt_m = static_cast<double>(pos.relative_altitude_m) + height;
     int stable_samples = 0;
     while (!stop_requested_) {
       auto pos = telemetry_->position();
       const double relative_altitude = static_cast<double>(pos.relative_altitude_m);
-      driver_data.current_altitude.store(relative_altitude);
+      state.current_altitude.store(relative_altitude);
 
       if (std::isfinite(relative_altitude) &&
           std::fabs(relative_altitude - target_rel_alt_m) <= kTakeoffToleranceM) {
@@ -427,7 +427,7 @@ CommandResponse MavsdkCommandDispatcher::execute_waypoint_following(
     std::vector<arch_nav::vehicle::Waypoint> waypoints,
     ReferenceFrame frame,
     std::function<void()> on_complete,
-    arch_nav::report::WaypointDriverOperationData& driver_data) {
+    arch_nav::execution::WaypointExecutionState& state) {
   if (frame != ReferenceFrame::GLOBAL_WGS84) return CommandResponse::DENIED;
 
   stop();
@@ -461,7 +461,7 @@ CommandResponse MavsdkCommandDispatcher::execute_waypoint_following(
   }
   stop_requested_ = false;
 
-  monitor_thread_ = std::thread([this, &driver_data] {
+  monitor_thread_ = std::thread([this, &state] {
     auto progress_updated = std::make_shared<std::atomic<bool>>(false);
     auto last_current = std::make_shared<std::atomic<int>>(0);
     auto last_total = std::make_shared<std::atomic<int>>(0);
@@ -475,8 +475,8 @@ CommandResponse MavsdkCommandDispatcher::execute_waypoint_following(
 
     while (!stop_requested_) {
       if (progress_updated->exchange(false)) {
-        driver_data.current_waypoint.store(last_current->load());
-        driver_data.total_waypoints.store(last_total->load());
+        state.current_waypoint.store(last_current->load());
+        state.total_waypoints.store(last_total->load());
       }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -506,7 +506,8 @@ CommandResponse MavsdkCommandDispatcher::execute_waypoint_following(
 CommandResponse MavsdkCommandDispatcher::execute_trajectory(
     std::vector<arch_nav::vehicle::TrajectoryPoint> /*trajectory*/,
     ReferenceFrame /*frame*/,
-    std::function<void()> /*on_complete*/) {
+    std::function<void()> /*on_complete*/,
+    arch_nav::execution::TrajectoryExecutionState& /*state*/) {
   return CommandResponse::NOT_SUPPORTED;
 }
 

@@ -7,7 +7,7 @@ namespace {
 struct MavsdkDriverRegistration {
   MavsdkDriverRegistration() {
     arch_nav::platform::DriverRegistry::instance().register_driver(
-        "mavsdk",
+        "mavsdk_ardupilot",
         [](const std::string& config_path) {
           auto config = config_path.empty()
               ? arch_nav_mavsdk::MavsdkConfig{}

@@ -20,7 +20,7 @@ class MavsdkPlatformDriver : public arch_nav::platform::IPlatformDriver {
 
   arch_nav::platform::ICommandDispatcher& dispatcher() override;
 
-  void start(arch_nav::context::VehicleContext& context,
+  void start(arch_nav::context::IVehicleContextWriter& vehicle_context_writer,
              std::chrono::milliseconds update_period) override;
 
   void stop() override;

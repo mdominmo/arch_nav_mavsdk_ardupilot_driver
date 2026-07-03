@@ -8,7 +8,7 @@
 #include <mavsdk/log_callback.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
 
-#include "arch_nav/context/vehicle_context.hpp"
+#include "arch_nav/context/i_vehicle_context_writer.hpp"
 
 #include "mavsdk_command_dispatcher.hpp"
 
@@ -87,11 +87,11 @@ arch_nav::platform::ICommandDispatcher& MavsdkPlatformDriver::dispatcher() {
   return internals_->dispatcher;
 }
 
-void MavsdkPlatformDriver::start(arch_nav::context::VehicleContext& context,
+void MavsdkPlatformDriver::start(arch_nav::context::IVehicleContextWriter& vehicle_context_writer,
                                   std::chrono::milliseconds update_period) {
   silence_mavsdk_logs();
   running_ = true;
-  telemetry_thread_ = std::thread([this, &context, update_period] {
+  telemetry_thread_ = std::thread([this, &vehicle_context_writer, update_period] {
     Telemetry telemetry(system_);
 
     std::mutex buf_mutex;
@@ -160,9 +160,9 @@ void MavsdkPlatformDriver::start(arch_nav::context::VehicleContext& context,
         status.swap(buf_status);
       }
 
-      if (gp) context.update(*gp);
-      if (kin) context.update(*kin);
-      if (status) context.update(*status);
+      if (gp) vehicle_context_writer.update(*gp);
+      if (kin) vehicle_context_writer.update(*kin);
+      if (status) vehicle_context_writer.update(*status);
     }
 
     telemetry.unsubscribe_position(position_handle);
