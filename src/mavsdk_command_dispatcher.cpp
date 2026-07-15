@@ -512,6 +512,8 @@ CommandResponse MavsdkCommandDispatcher::execute_trajectory(
 }
 
 void MavsdkCommandDispatcher::stop() {
+  const bool was_running = monitor_thread_.joinable();
+
   stop_requested_ = true;
   clear_subscriptions();
 
@@ -522,6 +524,19 @@ void MavsdkCommandDispatcher::stop() {
       monitor_thread_.detach();
     else
       monitor_thread_.join();
+  }
+
+  if (was_running) {
+    // A previous operation (takeoff/land/change_yaw/waypoint_following) was
+    // genuinely in flight. None of those are self-cancelling on the flight
+    // controller: a mission uploaded via Mission/MissionRaw keeps running
+    // autonomously once started regardless of what the companion computer
+    // does locally, so without this the vehicle just keeps flying it while
+    // arch_nav happily reports the operation as aborted/canceled. hold()
+    // covers every operation type uniformly - it stops an in-progress
+    // mission/goto and holds position - and any command issued right after
+    // (arm/takeoff/land/goto_location/mission start) overrides it anyway.
+    action_->hold();
   }
 
   resources_released_ = false;
